@@ -1,35 +1,27 @@
-# Create a new file named config.yml inside a .circleci directory
-
 version: 2.1
+
 jobs:
   build-and-test:
     docker:
-      - image: cimg/python:3.9-node
+      - image: cimg/python:3.11.6
     steps:
       - checkout
       - run:
-          name: "Install Python Dependencies"
+          name: Install Dependencies
           command: |
-            pip install -r requirements.txt # Assume you have a requirements.txt
+            pip install -r requirements.txt
       - run:
-          name: "Install DVC"
-          command: |
-            pip install dvc
-      - run:
-          name: "Pull Data from DVC"
-          command: |
-            dvc pull
-      - run:
-          name: "Run Pytests"
-          command: |
-            pytest
-      - run:
-          name: "Run Training Script (if needed on CI)"
-          command: |
-            python train.py # Assume your training logic is in train.py
+          name: Run Tests
+          command: pytest test.py
 
 workflows:
-  version: 2
-  main-workflow:
+  build-test-deploy:
     jobs:
       - build-and-test
+      # Add deployment job here if needed
+      # - deploy:
+      #     requires: - build-and-test  
+      #     filters:
+      #       branches:
+      #         only:
+      #           - main
