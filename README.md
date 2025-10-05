@@ -40,7 +40,8 @@ streamlit run app.py
 
 🎯 Project Structure
 
-text
+text:
+
 ├── model/                  # Trained models and vectorizers
 
 ├── test/                   # Automated test suite
