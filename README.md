@@ -42,18 +42,15 @@ streamlit run app.py
 
 text
 ├── model/                  # Trained models and vectorizers
+
 ├── test/                   # Automated test suite
+
 ├── app.py                  # Streamlit application
+
 ├── movie_recommendation_system.ipynb  # Training notebook
+
 └── requirements.txt        # Dependencies
 
-📄 License
-
-MIT License - Feel free to use for learning and development.
-
-Word Count: Exactly 234 words ✅
-
-Simply copy this content and create a README.md file in your GitHub repository!
 
 
 
