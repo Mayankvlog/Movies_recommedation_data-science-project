@@ -1,7 +1,7 @@
 
 🎬 Movie Recommendation System - Data Science Project
 
-A production-ready movie recommendation engine powered by deep learning, featuring complete MLOps practices including experiment tracking, automated testing, and CI/CD integration.
+A production-ready movie recommendation engine powered by deep learning, featuring complete Data science practices including experiment tracking, automated testing, and CI/CD integration.
 🚀 Overview
 
 This system uses a 5-layer neural network autoencoder to analyze movie genres and generate intelligent recommendations. The model learns compressed representations of movies through TF-IDF vectorization and delivers personalized suggestions using cosine similarity on learned embeddings.
