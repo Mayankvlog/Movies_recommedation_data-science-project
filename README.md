@@ -17,7 +17,16 @@ This system uses a 5-layer neural network autoencoder to analyze movie genres an
 
 🛠️ Tech Stack
 
-ML/DL: TensorFlow, Keras, Scikit-learn | MLOps: MLflow, pytest, CircleCI | Deployment: Streamlit | Data: Pandas, NumPy | Visualization: Matplotlib, Seaborn
+ML/DL: TensorFlow, Keras, Scikit-learn 
+
+| MLOps: MLflow, pytest, CircleCI
+
+| Deployment: Streamlit 
+
+| Data: Pandas, NumPy 
+
+| Visualization: Matplotlib, Seaborn
+
 📦 Quick Start
 
 bash
