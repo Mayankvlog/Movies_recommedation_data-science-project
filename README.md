@@ -5,6 +5,8 @@ A production-ready movie recommendation engine powered by deep learning, featuri
 🚀 Overview
 
 This system uses a 5-layer neural network autoencoder to analyze movie genres and generate intelligent recommendations. The model learns compressed representations of movies through TF-IDF vectorization and delivers personalized suggestions using cosine similarity on learned embeddings.
+
+
 ✨ Key Features
 
     Deep Learning Architecture: 5-layer autoencoder with multiple activation functions (ReLU, Tanh, ELU, SELU, Sigmoid)
