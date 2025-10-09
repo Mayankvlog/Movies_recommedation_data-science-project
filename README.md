@@ -49,7 +49,7 @@ jupyter notebook movie_recommendation_system.ipynb
 pytest
 
 # Launch app
-streamlit run app.py
+streamlit run apps.py
 
 🎯 Project Structure
 
