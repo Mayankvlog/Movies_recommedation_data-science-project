@@ -59,7 +59,7 @@ text:
 
 ├── test/                   # Automated test suite
 
-├── app.py                  # Streamlit application
+├── apps.py                  # Streamlit application
 
 ├── movie_recommendation_system.ipynb  # Training notebook
 
