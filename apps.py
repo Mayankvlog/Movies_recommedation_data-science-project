@@ -26,7 +26,7 @@ class DummyVectorizer:
 @st.cache_resource
 def load_model():
     """Load the DummyModel for demonstration purposes."""
-    st.info("Using a mock model. Recommendations will not be accurate.")
+    # The info message below has been removed.
     return DummyModel()
 
 @st.cache_resource
@@ -96,4 +96,3 @@ if movie_embeddings is not None and movies_df is not None and not movies_df.empt
             st.error(f"An error occurred during recommendation: {e}")
 else:
     st.warning("Could not load necessary model or data files. The application cannot proceed.")
-
