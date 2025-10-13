@@ -1,0 +1,4 @@
+[core]
+    remote = origin
+['remote "origin"']
+    url = https://dagshub.com/Mayankvlog/Movies_recommedation_data-science-project.dvc
