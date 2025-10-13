@@ -1,0 +1,5 @@
+outs:
+- md5: 12d4389b84d98541bcb6e6beff37c2ac
+  size: 427886
+  hash: md5
+  path: movies_df.pkl
