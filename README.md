@@ -1,5 +1,5 @@
 
-#  🎬 Movie Recommendation System - Data Science Project
+#    🎬 Movie Recommendation System - Data Science Project
 
 A production-ready movie recommendation engine powered by deep learning, featuring complete Data science practices including experiment tracking, automated testing, and CI/CD integration.
 
