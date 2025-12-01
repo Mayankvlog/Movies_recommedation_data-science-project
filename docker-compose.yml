@@ -1,0 +1,29 @@
+version: "3.9"
+
+services:
+  web:
+    image: mayank035/movies-recommendation:latest
+    container_name: movie_recommendation_app
+    ports:
+      - "8501:8501"
+    environment:
+      PYTHONUNBUFFERED: "1"
+      MONGO_URI: "mongodb://mongo:27017/moviesdb"
+    depends_on:
+      - mongo
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:7
+    container_name: movie_mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: moviesdb
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+
+volumes:
+  mongo_data: {}
+

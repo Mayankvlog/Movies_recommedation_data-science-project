@@ -1,98 +1,84 @@
 import streamlit as st
-import pandas as pd
-import numpy as np
 import pickle
-from sklearn.metrics.pairwise import cosine_similarity
+import pandas as pd
+from tensorflow.keras.models import load_model
+import numpy as np
+from recommender import recommend 
+from pymongo import MongoClient
+import os
 
-# --- Mock Model and Vectorizer Definitions ---
-class DummyModel:
-    """A mock Keras model that simulates the real one for UI testing."""
-    def __init__(self):
-        self.name = 'Encoder'
-    def predict(self, x, verbose=0):
-        # Return dummy embeddings with the correct shape
-        return np.random.rand(x.shape[0], 32)
-
-class DummyVectorizer:
-    """A mock, fitted TF-IDF vectorizer to bypass loading errors."""
-    def transform(self, texts):
-        # Return a correctly shaped numpy array, simulating a fitted vectorizer
-        return np.ones((len(texts), 1000))
-    def toarray(self):
-        # Added to match the real vectorizer's behavior for consistency
-        return self.transform([])
-
-# --- Caching Functions to Load Artifacts ---
+# --- MongoDB Setup ---
 @st.cache_resource
-def load_model():
-    """Load the DummyModel for demonstration purposes."""
-    # The info message below has been removed.
-    return DummyModel()
+def get_mongo_client():
+    mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017/moviesdb")
+    client = MongoClient(mongo_uri)
+    return client, client.get_database()
 
+# --- Caching to load resources only once ---
 @st.cache_resource
-def load_vectorizer():
-    """Load the DummyVectorizer to bypass fitting errors."""
-    return DummyVectorizer()
-
-@st.cache_data
-def load_data():
-    """Load the preprocessed movie DataFrame from disk."""
+def load_artifacts():
+    """
+    Loads the machine learning model and vectorizer from disk.
+    """
     try:
-        with open('model/movies_df.pkl', 'rb') as f:
-            return pickle.load(f)
+        encoder = load_model("model/movie_recommender.h5")
+        tfidf = pickle.load(open("model/tfidf_vectorizer.pkl", "rb"))
+        movies_df = pickle.load(open("model/movies_df.pkl", "rb"))
+        return encoder, tfidf, movies_df
     except FileNotFoundError:
-        st.error("Movie data file (movies_df.pkl) not found. Please run the training notebook.")
-        return None
-    except Exception as e:
-        st.error(f"Error loading movie data: {e}")
-        return None
-
-# --- Main Application Logic ---
-encoder_model = load_model()
-tfidf = load_vectorizer()
-movies_df = load_data()
+        st.error("Model artifacts not found. Please ensure 'movie_recommender.h5', 'tfidf_vectorizer.pkl', and 'movies_df.pkl' are in a 'model/' directory.")
+        return None, None, None
 
 @st.cache_data
-def generate_all_embeddings(_model, _vectorizer, _data):
-    """Generate embeddings for all movies on startup."""
-    if _model is None or _vectorizer is None or _data is None or 'soup' not in _data.columns:
+def generate_embeddings(_encoder, _tfidf, _movies_df):
+    """
+    Generates and caches movie embeddings.
+    """
+    if _encoder is None or _tfidf is None or _movies_df is None:
         return None
-    tfidf_matrix = _vectorizer.transform(_data['soup'])
-    return _model.predict(tfidf_matrix)
+    
+    tfidf_matrix = _tfidf.transform(_movies_df['soup'])
+    movie_embeddings = _encoder.predict(tfidf_matrix.toarray())
+    return movie_embeddings
 
-movie_embeddings = generate_all_embeddings(encoder_model, tfidf, movies_df)
+# --- Main App ---
 
-# --- UI Layout ---
-st.set_page_config(page_title="Movie Recommender", layout="wide")
-st.title("Movie Recommendation System")
-st.markdown("Select a movie to get 10 genre-based recommendations.")
+st.title("🎬 Movie Recommendation System")
 
-if movie_embeddings is not None and movies_df is not None and not movies_df.empty:
-    movie_list = movies_df['title'].unique()
-    selected_movie = st.selectbox("Choose a movie:", options=movie_list)
+# Mongo client and DB
+mongo_client, mongo_db = get_mongo_client()
+recommendations_collection = mongo_db.get_collection("recommendations")
 
-    if st.button("Get Recommendations"):
-        try:
-            movie_idx = movies_df[movies_df['title'] == selected_movie].index[0]
-            query_embedding = movie_embeddings[movie_idx].reshape(1, -1)
-            
-            sim_scores = cosine_similarity(query_embedding, movie_embeddings)[0]
-            
-            top_indices = np.argsort(sim_scores)[::-1][1:11]
-            recommended_movies = movies_df.iloc[top_indices]
-            
-            st.subheader(f"Recommendations for '{selected_movie}':")
-            for _, row in recommended_movies.iterrows():
-                try:
-                    # Try to convert vote_average to a float before formatting
-                    rating = float(row['vote_average'])
-                    display_rating = f"{rating:.1f}/10"
-                except (ValueError, TypeError):
-                    # If conversion fails, use a fallback string
-                    display_rating = "N/A"
-                
-                st.markdown(f"- **{row['title']}** (Viewer Rating: {display_rating})")
-        except Exception as e:
-            st.error(f"An error occurred during recommendation: {e}")
+# Load artifacts and generate embeddings
+encoder_model, tfidf_vectorizer, movies_data = load_artifacts()
+movie_embeddings = generate_embeddings(encoder_model, tfidf_vectorizer, movies_data)
+
+if movies_data is not None and movie_embeddings is not None:
+    movie_list = movies_data['title'].values
+    selected_movie = st.selectbox("Choose a movie you like:", movie_list)
+
+    if st.button("Recommend Movies", type="primary"):
+        with st.spinner("Finding recommendations..."):
+            # The recommend function is now imported
+            recommendations = recommend(selected_movie, movies_data, movie_embeddings)
+        
+        if recommendations:
+            # Save query and response to MongoDB
+            try:
+                doc = {
+                    "selected_movie": selected_movie,
+                    "recommendations": list(recommendations),
+                    "source": "streamlit_app"
+                }
+                recommendations_collection.insert_one(doc)
+            except Exception as e:
+                st.warning(f"Could not save recommendations to MongoDB: {e}")
+
+            st.subheader(f"Because you watched '{selected_movie}', you might also like:")
+            for i, movie in enumerate(recommendations, 1):
+                st.write(f"{i}. {movie}")
+        else:
+            st.warning("Could not find any recommendations for the selected movie.")
 else:
-    st.warning("Could not load necessary model or data files. The application cannot proceed.")
+    st.info("The application could not start because the required model files are missing.")
+
