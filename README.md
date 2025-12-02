@@ -13,7 +13,7 @@ This system uses a 5-layer neural network autoencoder to analyze movie genres an
 
     Deep Learning Architecture: 5-layer autoencoder with multiple activation functions (ReLU, Tanh, ELU, SELU, Sigmoid)
 
-    MLOps Integration: Complete experiment tracking with MLflow, DVC  automated testing with pytest, and CI/CD pipeline via CircleCI
+    MLOps Integration: Complete experiment tracking with MLflow, DVC  automated testing with pytest, and CI/CD pipeline via Github-action
 
     Interactive Web App: User-friendly Streamlit interface for real-time movie recommendations
 
@@ -23,9 +23,9 @@ This system uses a 5-layer neural network autoencoder to analyze movie genres an
 
 ML/DL: TensorFlow, Keras, Scikit-learn 
 
-| MLOps: MLflow, pytest, CircleCI
+| MLOps: MLflow, pytest, Github-action
 
-| Deployment: Streamlit 
+| Deployment: Streamlit, Docker, Docker-compose
 
 | Data: Pandas, NumPy 
 
