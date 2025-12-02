@@ -1,56 +1,68 @@
-import os
-os.environ["TF_USE_LEGACY_KERAS"] = '1'
-
 import pytest
+import pickle
+import pandas as pd
 import numpy as np
-from unittest.mock import Mock
-
-class DummyModel:
-    """A mock Keras model that simulates the real one."""
-    def __init__(self):
-        self.name = "Encoder"
-    def predict(self, x, verbose=0):
-        # Return a correctly shaped numpy array
-        return np.ones((x.shape[0], 32))
+from tensorflow.keras.models import load_model
+import os
+import sys
+# Add the project root directory to the Python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from recommender import recommend
 
 @pytest.fixture(scope="module")
-def mock_encoder_model():
-    """Provides the mock Keras model for tests."""
-    return DummyModel()
+def artifacts():
+    try:
+        encoder = load_model("model/movie_recommender.h5")
+        tfidf = pickle.load(open("model/tfidf_vectorizer.pkl", "rb"))
+        movies_df = pickle.load(open("model/movies_df.pkl", "rb"))
+        return {"encoder": encoder, "tfidf": tfidf, "movies_df": movies_df}
+    except FileNotFoundError:
+        pytest.fail("One or more model artifacts are missing from the 'model/' directory.")
 
 @pytest.fixture(scope="module")
-def dummy_vectorizer():
-    """Provides a mock, fitted TF-IDF vectorizer."""
-    class DummyVectorizer:
-        def transform(self, texts):
-            # Return a correctly shaped numpy array
-            return np.ones((len(texts), 5))  
-        def get_feature_names_out(self):
-            # Return a list of dummy feature names
-            return ['feature1', 'feature2', 'feature3', 'feature4', 'feature5']
-    return DummyVectorizer()
-
-def test_mock_model_loading(mock_encoder_model):
-    """Tests that the mock model has the correct interface."""
-    assert mock_encoder_model.name == "Encoder"
-    assert hasattr(mock_encoder_model, 'predict')
-
-def test_vectorizer_loading(dummy_vectorizer):
-    """Tests that the mock vectorizer has the correct interface."""
-    assert hasattr(dummy_vectorizer, 'transform')
-    assert hasattr(dummy_vectorizer, 'get_feature_names_out')
-
-def test_full_pipeline_prediction(mock_encoder_model, dummy_vectorizer):
-    """Tests the full pipeline logic with mock components."""
-    sample_soup = "Action Adventure Fantasy"
-    vectorized_input = dummy_vectorizer.transform([sample_soup])
+def movie_embeddings(artifacts):
+    encoder = artifacts["encoder"]
+    tfidf = artifacts["tfidf"]
+    movies_df = artifacts["movies_df"]
     
-    # Check that the output shape matches the number of features
-    assert vectorized_input.shape[1] == len(dummy_vectorizer.get_feature_names_out())
+    tfidf_matrix = tfidf.transform(movies_df['soup'])
+    embeddings = encoder.predict(tfidf_matrix.toarray())
+    return embeddings
+
+def test_artifact_loading(artifacts):
+    assert artifacts["encoder"] is not None
+    assert artifacts["tfidf"] is not None
+    assert isinstance(artifacts["movies_df"], pd.DataFrame)
+    assert not artifacts["movies_df"].empty
+
+def test_data_columns(artifacts):
+    required_columns = {'title', 'soup'}
+    assert required_columns.issubset(artifacts["movies_df"].columns)
+
+def test_recommendation_function_logic():
+    # Create dummy data for a simple unit test
+    dummy_titles = ['Movie A', 'Movie B', 'Movie C']
+    dummy_df = pd.DataFrame({'title': dummy_titles})
+    dummy_embeddings = np.array([[1.0, 0.0], [0.9, 0.1], [0.1, 0.9]])
     
-    # Get the embedding from the mock model
-    embedding = mock_encoder_model.predict(vectorized_input)
+    recommendations = recommend('Movie A', dummy_df, dummy_embeddings)
     
-    # Check that the final embedding has the correct shape
-    assert embedding.shape == (1, 32)
-    assert np.all(np.isfinite(embedding))
+    assert isinstance(recommendations, list)
+    assert 'Movie B' in recommendations
+    assert 'Movie A' not in recommendations
+
+def test_full_recommendation_flow(artifacts, movie_embeddings):
+    movies_df = artifacts["movies_df"]
+    test_movie = "Avatar"
+    
+    if test_movie not in movies_df['title'].values:
+        pytest.skip(f"'{test_movie}' not found in the dataset.")
+
+    recommendations = recommend(test_movie, movies_df, movie_embeddings)
+
+    assert isinstance(recommendations, list)
+    assert len(recommendations) == 10
+    assert all(isinstance(m, str) for m in recommendations)
+    assert test_movie not in recommendations
+
+    
