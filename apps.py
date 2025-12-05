@@ -164,11 +164,11 @@ with tab2:
         
         if history:
             history_df = pd.DataFrame([{
-                "Timestamp": doc.get("timestamp", "N/A"),
+                "Timestamp": str(doc.get("timestamp", "N/A")),
                 "Selected Movie": doc.get("selected_movie", "N/A"),
                 "Recommendations": ", ".join(doc.get("recommendations", []))
             } for doc in history])
-            st.dataframe(history_df, use_container_width=True)
+            st.dataframe(history_df, width='stretch')
             
             if st.button("📊 Download History as CSV"):
                 csv = history_df.to_csv(index=False)

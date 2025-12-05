@@ -1,0 +1,14 @@
+# Ignore everything
+**
+
+# Whitelist files needed for the application
+!apps.py
+!recommender.py
+!requirements.txt
+!model/movie_recommender.h5.dvc
+!model/movies_df.pkl.dvc
+!model/tfidf_vectorizer.pkl.dvc
+!data/tmdb_5000_movies.csv.dvc
+!model/.gitignore
+!data/.gitignore
+!Dockerfile
