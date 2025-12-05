@@ -32,8 +32,7 @@ def save_recommendation_to_db(mongo_db, selected_movie, recommendations):
             "selected_movie": selected_movie,
             "recommendations": list(recommendations),
             "source": "streamlit_app",
-            "user_session_id": st.session_state.get("session_id", "unknown")
-        }
+            "user_session_id": st.session_state.get("session_id", "unknown")        }
         recommendations_collection.insert_one(doc)
         return True
     except Exception as e:
@@ -51,7 +50,6 @@ def get_recommendation_history(mongo_db, limit=10):
     except Exception as e:
         st.warning(f"Could not retrieve recommendation history: {e}")
         return []
-
 def get_training_metrics(mongo_db):
     """Retrieve training metrics from MongoDB"""
     if mongo_db is None:
@@ -132,7 +130,7 @@ if movies_data is None or encoder_model is None or tfidf_vectorizer is None:
     st.stop()
 
 # Create tabs for different features
-tab1, tab2, tab3 = st.tabs(["Get Recommendations", "Recommendation History", "Model Info"])
+tab1,tab2,tab3 = st.tabs(["Get Recommendations","History","Model Info"])
 
 with tab1:
     if movies_data is not None and movie_embeddings is not None:
