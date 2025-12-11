@@ -338,7 +338,8 @@ with tab1:
     
     with col1:
         if movies_data is not None and movie_embeddings is not None:
-            movie_list = sorted(movies_data['title'].values)
+            # Convert to list and filter out non-string values, then sort
+            movie_list = sorted([str(title) for title in movies_data['title'].values if pd.notna(title)])
             
             # Search box
             search_query = st.text_input(
