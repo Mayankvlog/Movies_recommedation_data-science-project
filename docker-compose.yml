@@ -10,12 +10,23 @@ services:
       - .env
     environment:
       PYTHONUNBUFFERED: "1"
-      MONGO_URI: "mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongo:27019/moviesdb"
+      MONGO_URI: "mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongo:27017/moviesdb"
       STREAMLIT_SERVER_PORT: "8501"
+      STREAMLIT_SERVER_ADDRESS: "0.0.0.0"
       STREAMLIT_SERVER_HEADLESS: "true"
+      STREAMLIT_CLIENT_LOGGER_LEVEL: "info"
     depends_on:
-      - mongo
+      mongo:
+        condition: service_started
     restart: unless-stopped
+    networks:
+      - movies_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   mongo:
     image: mongo:7
@@ -30,8 +41,20 @@ services:
     volumes:
       - mongo_data:/data/db
     ports:
-      - "27019:27017"
+      - "27017:27017"
+    networks:
+      - movies_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
 volumes:
   mongo_data: {}
+
+networks:
+  movies_network:
+    driver: bridge
 
