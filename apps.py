@@ -98,7 +98,7 @@ search = st.text_input("Search movies", placeholder="Type to filter...")
 filtered = [m for m in movie_list if search.lower() in m.lower()] if search else movie_list
 
 selected = st.selectbox("Select a movie:", filtered)
-num_recs = st.slider("Number of recommendations", 5, 15, 10)
+num_recs = st.slider("Number of recommendations", 5, 7, 10)
 
 if st.button("Get Recommendations", type="primary", use_container_width=True):
     try:
