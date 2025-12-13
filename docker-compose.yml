@@ -6,6 +6,9 @@ services:
     container_name: movie_recommendation_app
     ports:
       - "8501:8501"
+    volumes:
+      - ./model:/app/model
+      - ./data:/app/data
     env_file:
       - .env
     environment:
