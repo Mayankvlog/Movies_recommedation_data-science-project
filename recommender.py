@@ -22,7 +22,7 @@ def recommend(movie_title, movies_df, movie_embeddings):
     similarities = cosine_similarity([movie_embedding], movie_embeddings)[0]
 
     # Get indices of top 5 similar movies
-    similar_movies_indices = np.argsort(similarities)[::-1][1:11]
+    similar_movies_indices = np.argsort(similarities)[::-1][1:16]
 
     # Get the titles
     recommended_movies = movies_df.iloc[similar_movies_indices]['title'].tolist()
