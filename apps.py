@@ -119,15 +119,15 @@ with col1:
             logger.error(f"Recommendation error: {e}")
             st.error(f"Error: {e}")
 
-with col2:
-    st.subheader("📊 Stats")
-    st.metric("Total Movies", f"{len(movies_data):,}")
-    st.metric("Embedding Dim", embeddings.shape[1])
+#with col2:
+#    st.subheader("📊 Stats")
+#    st.metric("Total Movies", f"{len(movies_data):,}")
+#    st.metric("Embedding Dim", embeddings.shape[1])
     
-    with st.sidebar:
-        st.subheader("About")
-        st.info("AI-powered movie recommendations using neural embeddings and TF-IDF vectorization.")
-        st.divider()
-        st.write("Status: Running")
-        st.write("Models: Loaded")
-        st.write("Embeddings: Ready")
+#    with st.sidebar:
+#        st.subheader("About")
+#        st.info("AI-powered movie recommendations using neural embeddings and TF-IDF vectorization.")
+#        st.divider()
+#        st.write("Status: Running")
+#        st.write("Models: Loaded")
+#        st.write("Embeddings: Ready")
