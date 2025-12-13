@@ -103,7 +103,7 @@ num_recs = st.slider("Number of recommendations", 5, 15, 10)
 if st.button("Get Recommendations", type="primary", use_container_width=True):
     try:
         with st.spinner("Finding matches..."):
-            recs = recommend(selected, movies_data, embeddings)[:num_recs]
+            recs = recommend(selected, movies_data, embeddings, num_recommendations=num_recs)
         
         if recs:
             st.success(f"Found {len(recs)} recommendations!")

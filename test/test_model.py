@@ -58,7 +58,7 @@ def test_full_recommendation_flow(artifacts, movie_embeddings):
     if test_movie not in movies_df['title'].values:
         pytest.skip(f"'{test_movie}' not found in the dataset.")
 
-    recommendations = recommend(test_movie, movies_df, movie_embeddings)
+    recommendations = recommend(test_movie, movies_df, movie_embeddings, num_recommendations=15)
 
     assert isinstance(recommendations, list)
     assert len(recommendations) == 15
