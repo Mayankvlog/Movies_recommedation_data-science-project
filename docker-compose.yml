@@ -6,9 +6,13 @@ services:
     container_name: movie_recommendation_app
     ports:
       - "8501:8501"
+    env_file:
+      - .env
     environment:
       PYTHONUNBUFFERED: "1"
       MONGO_URI: "mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongo:27019/moviesdb"
+      STREAMLIT_SERVER_PORT: "8501"
+      STREAMLIT_SERVER_HEADLESS: "true"
     depends_on:
       - mongo
     restart: unless-stopped
@@ -17,6 +21,8 @@ services:
     image: mongo:7
     container_name: movie_mongodb
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
