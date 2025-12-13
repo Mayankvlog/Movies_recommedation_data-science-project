@@ -59,7 +59,7 @@ This intelligent movie recommendation engine analyzes movie genres using a 5-lay
 |----------|--------------|
 | **Machine Learning** | TensorFlow, Keras, Scikit-learn |
 | **MLOps** | MLflow, DagsHub, DVC, PyTest |
-| **Frontend** | Streamlit, Altair |
+| **Frontend** | Streamlit|
 | **Data Processing** | Pandas, NumPy |
 | **Visualization** | Matplotlib, Seaborn |
 | **Database** | MongoDB |
