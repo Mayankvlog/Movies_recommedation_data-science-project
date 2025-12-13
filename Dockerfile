@@ -31,7 +31,7 @@ RUN mkdir -p ~/.streamlit
 RUN echo "[client]\nlogLevel = 'info'\n[logger]\nlevel = 'info'" > ~/.streamlit/config.toml
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8501/_stcore/health || exit 1
 
 EXPOSE 8501

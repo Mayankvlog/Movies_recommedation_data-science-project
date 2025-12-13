@@ -18,7 +18,21 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 logger.info("🚀 Starting Movie Recommender App...")
 logger.info(f"Python version: {sys.version}")
 logger.info(f"Working directory: {os.getcwd()}")
-logger.info(f"Model files check: {os.path.exists('model/movie_recommender.h5')}")
+
+# Check model files early
+MODEL_FILES = {
+    'model/movie_recommender.h5': os.path.exists('model/movie_recommender.h5'),
+    'model/tfidf_vectorizer.pkl': os.path.exists('model/tfidf_vectorizer.pkl'),
+    'model/movies_df.pkl': os.path.exists('model/movies_df.pkl'),
+    'data/tmdb_5000_movies.csv': os.path.exists('data/tmdb_5000_movies.csv')
+}
+
+logger.info("Model files status:")
+for file, exists in MODEL_FILES.items():
+    status = "✓" if exists else "✗"
+    logger.info(f"  {status} {file}")
+
+MISSING_FILES = [f for f, e in MODEL_FILES.items() if not e]
 
 TF_AVAILABLE = False
 RECOMMENDER_AVAILABLE = False
@@ -181,6 +195,30 @@ st.markdown("""
 logger.info("=" * 50)
 logger.info("LOADING ARTIFACTS AND EMBEDDINGS")
 logger.info("=" * 50)
+
+# Check for missing files first
+if MISSING_FILES:
+    st.error("❌ Missing Model Files")
+    st.write("The following files are missing:")
+    for file in MISSING_FILES:
+        st.write(f"  - `{file}`")
+    st.warning("""
+    **To fix this issue:**
+    1. Copy model files from your local machine to VPS:
+       ```
+       scp -r model/* root@139.59.56.109:~/Movies_recommedation_data-science-project/model/
+       scp -r data/* root@139.59.56.109:~/Movies_recommedation_data-science-project/data/
+       ```
+    2. Or use DVC to pull files (if configured):
+       ```
+       dvc pull
+       ```
+    3. Then restart the app:
+       ```
+       docker-compose restart web
+       ```
+    """)
+    st.stop()
 
 encoder_model, tfidf_vectorizer, movies_data = load_artifacts()
 
