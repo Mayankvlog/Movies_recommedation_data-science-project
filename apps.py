@@ -199,39 +199,72 @@ logger.info("=" * 50)
 # Check for missing files first
 if MISSING_FILES:
     st.error("❌ Missing Model Files")
-    st.write("The following files are missing:")
+    st.write("The following files are missing and need to be copied:")
     for file in MISSING_FILES:
         st.write(f"  - `{file}`")
+    
     st.warning("""
-    **To fix this issue:**
-    1. Copy model files from your local machine to VPS:
-       ```
-       scp -r model/* root@139.59.56.109:~/Movies_recommedation_data-science-project/model/
-       scp -r data/* root@139.59.56.109:~/Movies_recommedation_data-science-project/data/
-       ```
-    2. Or use DVC to pull files (if configured):
-       ```
-       dvc pull
-       ```
-    3. Then restart the app:
-       ```
-       docker-compose restart web
-       ```
+    **How to fix this:**
+    
+    Copy model files from your local machine to the VPS:
+    
+    ```bash
+    scp -r model/* root@139.59.56.109:~/Movies_recommedation_data-science-project/model/
+    scp -r data/* root@139.59.56.109:~/Movies_recommedation_data-science-project/data/
+    ```
+    
+    Then restart the app:
+    ```bash
+    docker-compose restart web
+    ```
     """)
+    
+    st.info("**Status**: Waiting for model files...")
+    logger.error(f"App cannot start - missing {len(MISSING_FILES)} file(s)")
     st.stop()
 
+# Try to load models
 encoder_model, tfidf_vectorizer, movies_data = load_artifacts()
 
+# If models failed to load
 if encoder_model is None or tfidf_vectorizer is None or movies_data is None:
-    logger.error("Failed to load artifacts - stopping app")
-    st.error("❌ Failed to load model artifacts. Please check the logs:")
-    st.info("Missing files or import error detected during startup.")
+    logger.error("Failed to load model artifacts")
+    st.error("❌ Failed to Load Models")
+    
+    with st.expander("Troubleshooting Steps"):
+        st.write("""
+        1. **Check if model files exist:**
+           ```bash
+           docker-compose exec web ls -la model/
+           docker-compose exec web ls -la data/
+           ```
+        
+        2. **Copy files from local machine:**
+           ```bash
+           scp -r model/* root@139.59.56.109:~/Movies_recommedation_data-science-project/model/
+           scp -r data/* root@139.59.56.109:~/Movies_recommedation_data-science-project/data/
+           ```
+        
+        3. **Restart the app:**
+           ```bash
+           docker-compose restart web
+           ```
+        
+        4. **Check logs:**
+           ```bash
+           docker-compose logs -f web
+           ```
+        """)
+    
+    logger.info("Stopping app - models could not be loaded")
     st.stop()
 
+# Generate embeddings
 movie_embeddings = generate_embeddings(encoder_model, tfidf_vectorizer, movies_data)
 
 if movie_embeddings is None:
-    logger.error("Failed to generate embeddings - stopping app")
+    logger.error("Failed to generate embeddings")
+    st.error("❌ Failed to Generate Embeddings")
     st.error("❌ Could not generate embeddings. Please check the logs:")
     st.info("Model files may be corrupted or missing.")
     st.stop()
