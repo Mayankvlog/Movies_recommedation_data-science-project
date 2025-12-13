@@ -61,7 +61,7 @@ def test_full_recommendation_flow(artifacts, movie_embeddings):
     recommendations = recommend(test_movie, movies_df, movie_embeddings)
 
     assert isinstance(recommendations, list)
-    assert len(recommendations) == 10
+    assert len(recommendations) == 15
     assert all(isinstance(m, str) for m in recommendations)
     assert test_movie not in recommendations
 
