@@ -2,185 +2,91 @@ import streamlit as st
 import pickle
 import pandas as pd
 import numpy as np
-import sys
-import traceback
+import os
 import logging
+from tensorflow.keras.models import load_model
+from recommender import recommend
 
-# Setup logging
+# Setup
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Suppress TensorFlow warnings
-import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+# Page config
+st.set_page_config(page_title="🎬 Movie Recommender", page_icon="🎬", layout="wide")
 
-# Log startup
-logger.info("🚀 Starting Movie Recommender App...")
-logger.info(f"Python version: {sys.version}")
-logger.info(f"Working directory: {os.getcwd()}")
-
-# Check model files early
-MODEL_FILES = {
-    'model/movie_recommender.h5': os.path.exists('model/movie_recommender.h5'),
-    'model/tfidf_vectorizer.pkl': os.path.exists('model/tfidf_vectorizer.pkl'),
-    'model/movies_df.pkl': os.path.exists('model/movies_df.pkl'),
-    'data/tmdb_5000_movies.csv': os.path.exists('data/tmdb_5000_movies.csv')
-}
-
-logger.info("Model files status:")
-for file, exists in MODEL_FILES.items():
-    status = "✓" if exists else "✗"
-    logger.info(f"  {status} {file}")
-
-MISSING_FILES = [f for f, e in MODEL_FILES.items() if not e]
-
-TF_AVAILABLE = False
-RECOMMENDER_AVAILABLE = False
-
-try:
-    from tensorflow.keras.models import load_model
-    TF_AVAILABLE = True
-    logger.info("✓ TensorFlow imported successfully")
-except Exception as e:
-    logger.error(f"❌ TensorFlow import error: {e}")
-    logger.error(traceback.format_exc())
-
-try:
-    from recommender import recommend
-    RECOMMENDER_AVAILABLE = True
-    logger.info("✓ Recommender module imported successfully")
-except Exception as e:
-    logger.error(f"❌ Recommender import error: {e}")
-    logger.error(traceback.format_exc())
-
-# Page Configuration
-try:
-    st.set_page_config(
-        page_title="Movie Recommender",
-        page_icon="🎬",
-        layout="wide",
-        initial_sidebar_state="expanded"
-    )
-    logger.info("✓ Streamlit page config set")
-except Exception as e:
-    logger.error(f"Error setting page config: {e}")
-
-# Custom CSS
+# CSS
 st.markdown("""
 <style>
     .main-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 2rem;
-        border-radius: 15px;
-        text-align: center;
-        margin-bottom: 2rem;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        padding: 2rem; border-radius: 15px; text-align: center;
+        margin-bottom: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     }
-    .main-header h1 {
-        color: white;
-        margin: 0;
-    }
+    .main-header h1 { color: white; margin: 0; }
     .movie-card {
-        background: white;
-        border-radius: 10px;
-        padding: 1rem;
-        margin: 0.5rem 0;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        border-left: 4px solid #667eea;
-        transition: transform 0.2s;
+        background: white; border-radius: 10px; padding: 1rem;
+        margin: 0.5rem 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border-left: 4px solid #667eea; transition: transform 0.2s;
     }
-    .movie-card:hover {
-        transform: translateX(5px);
-    }
+    .movie-card:hover { transform: translateX(5px); }
 </style>
 """, unsafe_allow_html=True)
 
-# Check model files
+# Verify files
 @st.cache_resource
-def verify_model_files():
-    """Verify all required model files exist"""
-    files_to_check = [
-        "model/movie_recommender.h5",
-        "model/tfidf_vectorizer.pkl",
-        "model/movies_df.pkl"
-    ]
-    missing_files = []
-    for file in files_to_check:
-        if not os.path.exists(file):
-            missing_files.append(file)
-            logger.error(f"Missing file: {file}")
-    
-    return missing_files
+def verify_files():
+    """Check if all required files exist"""
+    files = {
+        'model/movie_recommender.h5': 'Neural Network Model',
+        'model/tfidf_vectorizer.pkl': 'TF-IDF Vectorizer',
+        'model/movies_df.pkl': 'Movies Dataset',
+        'data/tmdb_5000_movies.csv': 'Movie Data'
+    }
+    missing = [f for f in files if not os.path.exists(f)]
+    return missing, files
 
-# Load Model Artifacts
+# Load artifacts
 @st.cache_resource
 def load_artifacts():
+    """Load model, vectorizer, and movies data"""
     try:
-        logger.info("Loading model artifacts...")
+        missing, _ = verify_files()
+        if missing:
+            return None, None, None, missing
         
-        if not TF_AVAILABLE:
-            logger.error("TensorFlow not available")
-            return None, None, None
-        
-        # Check files first
-        missing_files = verify_model_files()
-        if missing_files:
-            logger.error(f"Missing files: {missing_files}")
-            return None, None, None
-        
-        logger.info("Loading encoder model...")
         encoder = load_model("model/movie_recommender.h5", compile=False)
-        
-        logger.info("Loading TF-IDF vectorizer...")
         tfidf = pickle.load(open("model/tfidf_vectorizer.pkl", "rb"))
-        
-        logger.info("Loading movies dataframe...")
         movies_df = pickle.load(open("model/movies_df.pkl", "rb"))
         
-        logger.info(f"✓ All artifacts loaded successfully")
-        logger.info(f"  - Movies in dataset: {len(movies_df)}")
-        logger.info(f"  - Model output shape: {encoder.output_shape}")
-        
-        return encoder, tfidf, movies_df
-    except FileNotFoundError as e:
-        logger.error(f"Model files not found: {e}")
-        logger.error(traceback.format_exc())
-        return None, None, None
+        logger.info(f"✓ Loaded {len(movies_df)} movies")
+        return encoder, tfidf, movies_df, []
     except Exception as e:
         logger.error(f"Error loading artifacts: {e}")
-        logger.error(traceback.format_exc())
-        return None, None, None
+        return None, None, None, [str(e)]
 
+# Generate embeddings
 @st.cache_data
 def generate_embeddings(_encoder, _tfidf, _movies_df):
+    """Generate movie embeddings"""
     try:
-        logger.info("Generating embeddings...")
-        
         if _encoder is None or _tfidf is None or _movies_df is None:
-            logger.error("Cannot generate embeddings: missing dependencies")
             return None
         
         if 'soup' not in _movies_df.columns:
             if 'genres' in _movies_df.columns:
-                logger.info("Creating soup column from genres...")
                 _movies_df['soup'] = _movies_df['genres'].apply(
                     lambda x: ' '.join(x) if isinstance(x, list) else str(x)
                 )
             else:
-                logger.warning("No 'genres' or 'soup' column found")
                 return None
         
-        logger.info("Computing TF-IDF matrix...")
         tfidf_matrix = _tfidf.transform(_movies_df['soup'])
-        
-        logger.info("Generating embeddings using encoder...")
-        movie_embeddings = _encoder.predict(tfidf_matrix.toarray(), verbose=0)
-        
-        logger.info(f"✓ Embeddings generated: shape {movie_embeddings.shape}")
-        return movie_embeddings
+        embeddings = _encoder.predict(tfidf_matrix.toarray(), verbose=0)
+        logger.info(f"✓ Generated embeddings: {embeddings.shape}")
+        return embeddings
     except Exception as e:
         logger.error(f"Error generating embeddings: {e}")
-        logger.error(traceback.format_exc())
         return None
 
 # Header
@@ -191,149 +97,81 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Load Data
-logger.info("=" * 50)
-logger.info("LOADING ARTIFACTS AND EMBEDDINGS")
-logger.info("=" * 50)
+# Load data
+encoder, tfidf, movies_data, errors = load_artifacts()
 
-# Check for missing files first
-if MISSING_FILES:
-    st.error("❌ Missing Model Files")
-    st.write("The following files are missing and need to be copied:")
-    for file in MISSING_FILES:
-        st.write(f"  - `{file}`")
+# Error handling
+if errors or encoder is None:
+    st.error("❌ Missing or Failed to Load Model Files")
+    missing, files = verify_files()
     
-    st.warning("""
-    **How to fix this:**
-    
-    Copy model files from your local machine to the VPS:
-    
-    ```bash
-    scp -r model/* root@139.59.56.109:~/Movies_recommedation_data-science-project/model/
-    scp -r data/* root@139.59.56.109:~/Movies_recommedation_data-science-project/data/
-    ```
-    
-    Then restart the app:
-    ```bash
-    docker-compose restart web
-    ```
-    """)
-    
-    st.info("**Status**: Waiting for model files...")
-    logger.error(f"App cannot start - missing {len(MISSING_FILES)} file(s)")
-    st.stop()
-
-# Try to load models
-encoder_model, tfidf_vectorizer, movies_data = load_artifacts()
-
-# If models failed to load
-if encoder_model is None or tfidf_vectorizer is None or movies_data is None:
-    logger.error("Failed to load model artifacts")
-    st.error("❌ Failed to Load Models")
-    
-    with st.expander("Troubleshooting Steps"):
-        st.write("""
-        1. **Check if model files exist:**
-           ```bash
-           docker-compose exec web ls -la model/
-           docker-compose exec web ls -la data/
-           ```
-        
-        2. **Copy files from local machine:**
-           ```bash
-           scp -r model/* root@139.59.56.109:~/Movies_recommedation_data-science-project/model/
-           scp -r data/* root@139.59.56.109:~/Movies_recommedation_data-science-project/data/
-           ```
-        
-        3. **Restart the app:**
-           ```bash
-           docker-compose restart web
-           ```
-        
-        4. **Check logs:**
-           ```bash
-           docker-compose logs -f web
-           ```
+    if missing:
+        st.write("**Missing files:**")
+        for f in missing:
+            st.write(f"  - `{f}`")
+        st.warning("""
+        **Fix:** Copy files to VPS:
+        ```bash
+        scp -r model/* root@139.59.56.109:~/Movies_recommedation_data-science-project/model/
+        scp -r data/* root@139.59.56.109:~/Movies_recommedation_data-science-project/data/
+        docker-compose restart web
+        ```
         """)
-    
-    logger.info("Stopping app - models could not be loaded")
+    else:
+        st.error(f"Load error: {errors[0] if errors else 'Unknown'}")
     st.stop()
 
 # Generate embeddings
-movie_embeddings = generate_embeddings(encoder_model, tfidf_vectorizer, movies_data)
+embeddings = generate_embeddings(encoder, tfidf, movies_data)
 
-if movie_embeddings is None:
-    logger.error("Failed to generate embeddings")
+if embeddings is None:
     st.error("❌ Failed to Generate Embeddings")
-    st.error("❌ Could not generate embeddings. Please check the logs:")
-    st.info("Model files may be corrupted or missing.")
     st.stop()
 
-logger.info("=" * 50)
-logger.info("✓ ALL SYSTEMS GO - APP READY")
-logger.info("=" * 50)
+logger.info("✓ App Ready")
 
-# Main Interface
+# Main UI
 col1, col2 = st.columns([2, 1])
 
 with col1:
     st.markdown("### 🎯 Find Similar Movies")
     
-    # Movie selection
-    try:
-        movie_list = sorted([str(title) for title in movies_data['title'].values if pd.notna(title)])
-        
-        search = st.text_input("🔍 Search movies", placeholder="Type to filter...")
-        filtered = [m for m in movie_list if search.lower() in m.lower()] if search else movie_list
-        
-        selected = st.selectbox("Select a movie:", filtered)
-        
-        num_recs = st.slider("Number of recommendations", 5, 15, 10)
-        
-        if st.button("🎯 Get Recommendations", type="primary", use_container_width=True):
-            if not RECOMMENDER_AVAILABLE:
-                st.error("❌ Recommender function not available")
+    movie_list = sorted([str(t) for t in movies_data['title'].values if pd.notna(t)])
+    search = st.text_input("🔍 Search movies", placeholder="Type to filter...")
+    filtered = [m for m in movie_list if search.lower() in m.lower()] if search else movie_list
+    
+    selected = st.selectbox("Select a movie:", filtered)
+    num_recs = st.slider("Number of recommendations", 5, 15, 10)
+    
+    if st.button("🎯 Get Recommendations", type="primary", use_container_width=True):
+        try:
+            with st.spinner("Finding matches..."):
+                recs = recommend(selected, movies_data, embeddings)[:num_recs]
+            
+            if recs:
+                st.success(f"✅ Found {len(recs)} recommendations!")
+                st.markdown("### 🎥 Recommended Movies")
+                for i, movie in enumerate(recs, 1):
+                    st.markdown(f"""
+                    <div class="movie-card">
+                        <strong>{i}.</strong> {movie}
+                    </div>
+                    """, unsafe_allow_html=True)
             else:
-                try:
-                    logger.info(f"Getting recommendations for: {selected}")
-                    with st.spinner("Finding matches..."):
-                        recommendations = recommend(selected, movies_data, movie_embeddings)[:num_recs]
-                    
-                    if recommendations:
-                        logger.info(f"✓ Found {len(recommendations)} recommendations")
-                        st.success(f"✅ Found {len(recommendations)} recommendations!")
-                        st.markdown("### 🎥 Recommended Movies")
-                        
-                        for i, movie in enumerate(recommendations, 1):
-                            st.markdown(f"""
-                            <div class="movie-card">
-                                <strong>{i}.</strong> {movie}
-                            </div>
-                            """, unsafe_allow_html=True)
-                    else:
-                        logger.warning(f"No recommendations found for: {selected}")
-                        st.warning("⚠️ No recommendations found.")
-                except Exception as e:
-                    logger.error(f"Error getting recommendations: {e}")
-                    logger.error(traceback.format_exc())
-                    st.error(f"❌ Error getting recommendations: {e}")
-    except Exception as e:
-        logger.error(f"Error in main interface: {e}")
-        logger.error(traceback.format_exc())
-        st.error(f"❌ Error in main interface: {e}")
+                st.warning("⚠️ No recommendations found.")
+        except Exception as e:
+            logger.error(f"Recommendation error: {e}")
+            st.error(f"❌ Error: {e}")
 
 with col2:
     st.markdown("### 📊 Stats")
     st.metric("Total Movies", f"{len(movies_data):,}")
-    st.metric("Embedding Dim", movie_embeddings.shape[1])
+    st.metric("Embedding Dim", embeddings.shape[1])
     
-    # Sidebar info
     with st.sidebar:
         st.markdown("### ℹ️ About")
-        st.info("This app uses neural embeddings to find similar movies based on their descriptions and genres.")
+        st.info("AI-powered movie recommendations using neural embeddings.")
         st.markdown("---")
         st.markdown("**Status:** ✅ Running")
-        st.markdown(f"**Models Loaded:** {encoder_model is not None}")
-        st.markdown(f"**Embeddings Ready:** {movie_embeddings is not None}")
-
-    
+        st.markdown(f"**Models:** ✓ Loaded")
+        st.markdown(f"**Embeddings:** ✓ Ready")
