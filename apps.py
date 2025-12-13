@@ -91,43 +91,27 @@ if embeddings is None:
 
 logger.info("App Ready")
 
-col1, col2 = st.columns([2, 1])
+st.subheader("🎯 Find Similar Movies")
 
-with col1:
-    st.subheader("🎯 Find Similar Movies")
-    
-    movie_list = sorted([str(t) for t in movies_data['title'].values if pd.notna(t)])
-    search = st.text_input("Search movies", placeholder="Type to filter...")
-    filtered = [m for m in movie_list if search.lower() in m.lower()] if search else movie_list
-    
-    selected = st.selectbox("Select a movie:", filtered)
-    num_recs = st.slider("Number of recommendations", 5, 15, 10)
-    
-    if st.button("Get Recommendations", type="primary", use_container_width=True):
-        try:
-            with st.spinner("Finding matches..."):
-                recs = recommend(selected, movies_data, embeddings)[:num_recs]
-            
-            if recs:
-                st.success(f"Found {len(recs)} recommendations!")
-                st.subheader("Recommended Movies")
-                for i, movie in enumerate(recs, 1):
-                    st.write(f"{i}. {movie}")
-            else:
-                st.warning("No recommendations found.")
-        except Exception as e:
-            logger.error(f"Recommendation error: {e}")
-            st.error(f"Error: {e}")
+movie_list = sorted([str(t) for t in movies_data['title'].values if pd.notna(t)])
+search = st.text_input("Search movies", placeholder="Type to filter...")
+filtered = [m for m in movie_list if search.lower() in m.lower()] if search else movie_list
 
-#with col2:
-#    st.subheader("📊 Stats")
-#    st.metric("Total Movies", f"{len(movies_data):,}")
-#    st.metric("Embedding Dim", embeddings.shape[1])
-    
-#    with st.sidebar:
-#        st.subheader("About")
-#        st.info("AI-powered movie recommendations using neural embeddings and TF-IDF vectorization.")
-#        st.divider()
-#        st.write("Status: Running")
-#        st.write("Models: Loaded")
-#        st.write("Embeddings: Ready")
+selected = st.selectbox("Select a movie:", filtered)
+num_recs = st.slider("Number of recommendations", 5, 15, 10)
+
+if st.button("Get Recommendations", type="primary", use_container_width=True):
+    try:
+        with st.spinner("Finding matches..."):
+            recs = recommend(selected, movies_data, embeddings)[:num_recs]
+        
+        if recs:
+            st.success(f"Found {len(recs)} recommendations!")
+            st.subheader("Recommended Movies")
+            for i, movie in enumerate(recs, 1):
+                st.write(f"{i}. {movie}")
+        else:
+            st.warning("No recommendations found.")
+    except Exception as e:
+        logger.error(f"Recommendation error: {e}")
+        st.error(f"Error: {e}")
